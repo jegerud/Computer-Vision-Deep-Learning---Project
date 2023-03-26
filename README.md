@@ -23,6 +23,10 @@ The model is tested with
 
     python test.py configs/ssd300.py
 
+A demo of the model can be run with
+
+    python demo.py configs/ssd300.py demo/mnist demo/mnist_output
+
 ## Authors
 
 - **Kristian** - _Developement_ -
