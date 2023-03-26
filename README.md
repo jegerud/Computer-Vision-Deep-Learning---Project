@@ -21,7 +21,7 @@ The model is trained with
 
 The model is tested with
 
-    python train.py configs/ssd300.py
+    python test.py configs/ssd300.py
 
 ## Authors
 
