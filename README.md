@@ -11,7 +11,7 @@ your local machine for development and testing purposes.
 
 Requirements for the software and other tools to build, test and push
 
-- [Example 1](https://pytorch.org)
+- [PyTorch](https://pytorch.org)
 
 ### Installing
 
@@ -25,8 +25,8 @@ The model is tested with
 
 ## Authors
 
-- **Kristian** - _Provided README Template_ -
-  [PurpleBooth](https://jegerud.github.io)
+- **Kristian** - _Developement_ -
+  [Jegerud](https://jegerud.github.io)
 
 ## Acknowledgments
 
