@@ -1,7 +1,7 @@
 import sys
 assert sys.version_info >= (3, 7), "This code requires python version >= 3.7"
-import functools
-import time
+# import functools
+# import time
 import click
 import torch
 from omegaconf import OmegaConf

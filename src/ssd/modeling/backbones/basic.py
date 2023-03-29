@@ -42,7 +42,6 @@ class ConvolutionalLayer(nn.Sequential):
             nn.ReLU(),
         )
 
-
 class BasicModel(torch.nn.Module):
     """
     This is a basic backbone for SSD.
