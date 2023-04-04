@@ -11,6 +11,10 @@ from ssd.data.transforms import (
     GroundTruthBoxesToAnchors)
 from .utils import get_dataset_dir, get_output_dir
 
+country = "Norway"
+train_set_dir = f"road_damage/{country}/train"
+# train_set_dir = f"/cluster/projects/itea_lille-idi-tdt4265/datasets/rdd2022/RDD2022/{country}/train"
+
 train = dict(
     batch_size=32,
     amp=True,  # Automatic mixed precision
@@ -46,7 +50,7 @@ model = L(SSD300)(
 
 # Keep the model, except change the backbone and number of classes
 model.feature_extractor = L(backbones.VGG)()
-model.num_classes = 4 + 1
+model.num_classes = 4 + 1 
 
 train_cpu_transform = L(torchvision.transforms.Compose)(transforms=[
     L(RandomSampleCrop)(),
@@ -73,18 +77,9 @@ schedulers = dict(
 )
 
 data_train = dict(
-    # dataset=L(torch.utils.data.ConcatDataset)(datasets=[
-    #     L(RoadDamageDataset)(
-    #         data_dir=get_dataset_dir("road_damage/Czech/train"), 
-    #         # split="train", 
-    #         transform=train_cpu_transform, 
-    #         keep_difficult=True, 
-    #         remove_empty=True
-    #     ),
-    # ]),
     dataset=L(RoadDamageDataset)(
-        data_dir=get_dataset_dir("road_damage/Czech/train"), 
-        # split="train", 
+        data_dir=get_dataset_dir(train_set_dir), 
+        split="train", 
         transform=train_cpu_transform, 
         keep_difficult=True, 
         remove_empty=True
@@ -98,12 +93,13 @@ data_train = dict(
         collate_fn=utils.batch_collate,
         drop_last=True
     ),
-    gpu_transform=gpu_transform
+    gpu_transform=gpu_transform,
+    train_val_split = 0.20
 )
 data_val = dict(
     dataset=L(RoadDamageDataset)(
-        data_dir=get_dataset_dir("road_damage/Czech/val"), 
-        # split="val", 
+        data_dir=get_dataset_dir(train_set_dir), 
+        split="val", 
         transform=val_cpu_transform, 
         remove_empty=True
     ),

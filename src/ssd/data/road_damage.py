@@ -12,17 +12,18 @@ from ssd import utils
 class RoadDamageDataset(torch.utils.data.Dataset):
     class_names = ('__background__', 'D00', 'D10', 'D20', 'D40')
 
-    def __init__(self, data_dir, remove_empty, transform=None, keep_difficult=False):
+    def __init__(self, data_dir, split, remove_empty, transform=None, keep_difficult=False):
         """Dataset for road damage data.
         Args:
-            data_dir: the root of the road damage dataset, the directory is split into test, val and 
+            data_dir: the root of the road damage dataset, the directory is split into test and 
             train directory:
                 
         """
         self.data_dir = data_dir
+        self.split = split
         self.transform = transform
-        image_sets_file = os.path.join(self.data_dir, "images")
-        self.image_ids = RoadDamageDataset._read_image_ids(image_sets_file)
+        image_sets_file = os.path.join("ssd/data/utils/splits", "split.txt")
+        self.image_ids = RoadDamageDataset._read_image_ids(image_sets_file, self.split)
         self.keep_difficult = keep_difficult
         self.class_dict = {class_name: i for i, class_name in enumerate(self.class_names)}
         if remove_empty:
@@ -53,12 +54,14 @@ class RoadDamageDataset(torch.utils.data.Dataset):
         return len(self.image_ids)
 
     @staticmethod
-    def _read_image_ids(image_sets_file):
+    def _read_image_ids(image_sets_file, split):
         ids = []
-        images = [f for f in listdir(image_sets_file) if isfile(join(image_sets_file, f))]
-        for image in images:
-            iid = image.rsplit('.', 1)[0]
-            if len(iid): 
+        cat_split = 1 if split == "train" else -1
+        f = open(image_sets_file, "r")
+        for x in f:
+            line = x.rsplit(' ', 1)[0]
+            iid, cat = line.rsplit(' ', 1)
+            if (int(cat) == int(cat_split)):
                 ids.append(iid)
 
         return ids

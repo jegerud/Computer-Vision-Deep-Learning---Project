@@ -15,6 +15,7 @@ from tops.config import instantiate
 from tops import logger, checkpointer
 from torch.optim.lr_scheduler import ChainedScheduler
 torch.backends.cudnn.benchmark = True
+from ssd.data.utils.generate_train_val import generate_train_val
 
 def train_epoch(
         model, scaler: torch.cuda.amp.GradScaler,
@@ -66,6 +67,8 @@ def train(config_path: Path, evaluate_only: bool):
     logger.logger.DEFAULT_SCALAR_LEVEL = logger.logger.DEBUG
     cfg = utils.load_config(config_path)
     print_config(cfg)
+
+    generate_train_val(cfg=cfg)
 
     tops.init(cfg.output_dir)
     tops.set_AMP(cfg.train.amp)
