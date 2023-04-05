@@ -7,10 +7,10 @@ from os.path import isfile, join
 
 def generate_train_val(cfg):
     directory = os.path.join("ssd/data/utils", "splits")
-    file_dir = os.path.join("ssd/data/utils", "split.txt")
+    file_dir = os.path.join("ssd/data/utils/splits", "split.txt")
     if os.path.isfile(file_dir):
         return
-    print(f"Split directory: {file_dir}")
+    print(f"Creating split file in directory: {file_dir}")
 
     image_sets_file = os.path.join("data", train_set_dir, "images")
     ids = read_image_ids(image_sets_file=image_sets_file)

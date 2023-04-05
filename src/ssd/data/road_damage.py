@@ -30,6 +30,7 @@ class RoadDamageDataset(torch.utils.data.Dataset):
             self.image_ids = [id_ for id_ in self.image_ids if len(self._get_annotation(id_)[0]) > 0]
 
     def __getitem__(self, idx):
+        # image_id = self.image_ids[idx].rsplit('_', 1)[1]
         image_id = self.image_ids[idx]
         boxes, labels, is_difficult, im_info = self._get_annotation(image_id)
         if not self.keep_difficult:
@@ -44,7 +45,8 @@ class RoadDamageDataset(torch.utils.data.Dataset):
             labels=labels,
             width=im_info["width"],
             height=im_info["height"],
-            image_id=int(image_id)
+            image_id=image_id
+            # image_id=int(image_id)
         )
         if self.transform:
             sample = self.transform(sample)

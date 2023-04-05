@@ -3,7 +3,7 @@ import torch
 from torch.optim.lr_scheduler import MultiStepLR, LinearLR
 # from ssd.data import VOCDataset
 from ssd.data import RoadDamageDataset
-from ssd.modeling import backbones, AnchorBoxes, SSD300
+from ssd.modeling import backbones, AnchorBoxes, SSD300, SSDMultiboxLoss
 from ssd import utils
 from tops.config import LazyCall as L
 from ssd.data.transforms import (
@@ -66,6 +66,8 @@ val_cpu_transform = L(torchvision.transforms.Compose)(transforms=[
 gpu_transform = L(torchvision.transforms.Compose)(transforms=[
     L(Normalize)(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
+loss_objective = L(SSDMultiboxLoss)(anchors="${anchors}")
 
 optimizer = L(torch.optim.Adam)(
     lr=5e-3, weight_decay=0.0005
