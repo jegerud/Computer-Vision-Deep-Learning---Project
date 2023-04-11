@@ -16,17 +16,30 @@ def AMP():
 def _to_cuda(element):
     return element.to(get_device(), non_blocking=True)
 
-
 def to_cuda(elements):
     if isinstance(elements, tuple) or isinstance(elements, list):
         return [_to_cuda(x) for x in elements]
-    # elif isinstance(elements, dict):
-    #     res = {}
-    #     for k, v in elements.items(): res[k] = _to_cuda(v)
-    #     return res
     if isinstance(elements, dict):
         return {k: _to_cuda(v) for k,v in elements.items()}
     return _to_cuda(elements)
+
+def move_to(obj):
+    device = get_device()
+    # print(f"Object type: {type(obj)}")
+    # Recursively move the elements of an object to device, used for annotations
+    if torch.is_tensor(obj): 
+        return obj.to(device)
+    elif isinstance(obj, dict):
+        res = {}
+        for k, v in obj.items(): res[k] = move_to(v)
+        return res
+    elif isinstance(obj, list):
+        res = []
+        for v in obj: res.append(move_to(v))
+        return res
+    else:
+        print(f"Type obj: {type(obj)}")
+        raise TypeError("Invalid type for move_to")
 
 
 def get_device() -> torch.device:
