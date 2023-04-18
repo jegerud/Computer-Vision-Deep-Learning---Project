@@ -167,14 +167,15 @@ class RandomHorizontalFlip(torch.nn.Module):
         super().__init__()
         self.p = p
 
-    def __call__(self, sample):
-        image = sample["image"]
+    def __call__(self, image):
+        # image = sample["image"]
+        target = []
         if np.random.uniform() < self.p:
-            sample["image"] = image.flip(-1)
-            boxes = sample["boxes"]
+            image = image.flip(-1)
+            boxes = target["boxes"]
             boxes[:, [0, 2]] = 1 - boxes[:, [2, 0]]
-            sample["boxes"] = boxes
-        return sample
+            target["boxes"] = boxes
+        return image, target
 
 
 class Resize(torch.nn.Module):
@@ -186,5 +187,5 @@ class Resize(torch.nn.Module):
     @torch.no_grad()
     def forward(self, image):
         # batch["image"] = torchvision.transforms.functional.resize(batch["image"], (300,300), antialias=True)
-        image = torchvision.transforms.functional.resize(image, (300,300), antialias=True)
+        image = torchvision.transforms.functional.resize(image, (640,640), antialias=True)
         return image

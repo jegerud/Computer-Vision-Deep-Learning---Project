@@ -3,6 +3,8 @@ from torch.utils.data._utils.collate import default_collate
 from pathlib import Path
 # from tops.config import LazyConfig
 from os import PathLike
+import csv
+import json
 
 def batch_collate(batch):
     elem = batch[0]
@@ -44,10 +46,15 @@ def tencent_trick(model):
             {'params': decay}]
 
 
-# def load_config(config_path: PathLike):
-#     config_path = Path(config_path)
-#     run_name = "_".join(config_path.parts[1:-1]) + "_" + config_path.stem
-#     cfg = LazyConfig.load(str(config_path))
-#     cfg.output_dir = Path(cfg.train._output_dir).joinpath(*config_path.parts[1:-1], config_path.stem)
-#     cfg.run_name = run_name
-#     return cfg
+def get_checkpoint(model_name):
+    with open('losses.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        losses = [float(l) for l in [row for row in csv_reader][0]]
+    
+    start_epoch = 0
+    f = open(f"checkpoints/{model_name}.json")
+    data = json.load(f)
+
+    start_epoch = data["current_epoch"]
+
+    return losses, start_epoch

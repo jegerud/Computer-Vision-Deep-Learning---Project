@@ -2,12 +2,12 @@ import os
 import numpy as np
 from os import listdir
 from os.path import isfile, join
-from config.resnet import train_val_split, train_set_dir
+from config.resnet import train_val_split
 
 
-def generate_train_val():
-    directory = os.path.join("data_utils/utils", "splits")
-    file_dir = os.path.join("data_utils/utils/splits", "split.txt")
+def generate_train_val(train_set_dir, country):
+    directory = os.path.join("data_utils/utils", "splits", country)
+    file_dir = os.path.join("data_utils/utils/splits", country, "split.txt")
     
     if os.path.isfile(file_dir):
         return

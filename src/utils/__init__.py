@@ -3,7 +3,7 @@ from .utils import (
     batch_collate_val,
     class_id_to_name,
     tencent_trick,
-    # load_config
+    get_checkpoint
 )
 from .box_utils import (
     bbox_ltrb_to_ltwh,
