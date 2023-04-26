@@ -1,3 +1,3 @@
 # from .mnist import MNISTDetectionDataset
 # from .voc import VOCDataset
-from .road_damage import RoadDamageDataset
+from .road_damage import RoadDamageDataset, RoadDamageTestDataset

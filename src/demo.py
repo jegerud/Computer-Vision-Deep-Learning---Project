@@ -1,52 +1,83 @@
-import torchvision
+import sys
+# assert sys.version_info >= (3, 7), "This code requires python version >= 3.7"
 import torch
-import tqdm
-import click
+import os
 import numpy as np
-import tops
-from ssd import utils
-from tops.config import instantiate
-from PIL import Image
+import tqdm
+import random
 from vizer.draw import draw_boxes
-from tops.checkpointer import load_checkpoint
-from pathlib import Path
+from PIL import Image
+from config.resnet import DatasetTest, test_cpu_transform
+from utils.torch_utils import to_cuda, get_device
+from modelling import ResNet18
+from torchvision.ops import nms
 
-@torch.no_grad()
-@click.command()
-@click.argument("config_path", type=click.Path(exists=True, dir_okay=False, path_type=Path))
-@click.argument("image_dir", type=click.Path(exists=True, dir_okay=True, path_type=Path))
-@click.argument("output_dir", type=click.Path(dir_okay=True, path_type=Path))
-@click.option("-s", "--score_threshold", type=click.FloatRange(min=0, max=1), default=.3)
-def run_demo(config_path: Path, score_threshold: float, image_dir: Path, output_dir: Path):
-    cfg = utils.load_config(config_path)
-    model = tops.to_cuda(instantiate(cfg.model))
+# base_dir = "/Users/kristian/Documents/Trondheim/4. semester/TDT4265/TDT4265_project/data/road_damage"
+base_dir = "/cluster/projects/itea_lille-idi-tdt4265/datasets/rdd2022/RDD2022"
+
+test_set_dir = f"{base_dir}/Norway/test/images/"
+
+def demo():
+    n_elements = 5
+    dataset = DatasetTest()
+    dataloader = dataset.dataloader
+
+    model_name = 'resnet18_it2'
+    model_obj = ResNet18()
+
+    print(f"Loading model!")
+    checkpoint = torch.load("checkpoints/" + model_name + ".pt", map_location=get_device())
+    print(f"Checkpoint loaded!")
+
+    model_obj.model.load_state_dict(checkpoint['model_state'])
+    print(f"Loaded {model_name}.pt from checkpoints!")
+
+    model = model_obj.model  
+    
+    # print(f"Model:\n{model}")
+    model.to(get_device())
     model.eval()
-    ckpt = load_checkpoint(cfg.output_dir.joinpath("checkpoints"), map_location=tops.get_device())
-    model.load_state_dict(ckpt["model"])
 
-    image_paths = list(image_dir.glob("*.png")) + list(image_dir.glob("*.jpg"))
+    image_list = os.listdir(test_set_dir)
+    image_list.sort()
+    
+    # images = random.sample(image_list, n_elements)
+    images = image_list[:1]
+    
+    for image_id in images:
+        iid = image_id.rsplit('.', 1)[0]
+        image_path = test_set_dir + image_id
 
-    output_dir.mkdir(exist_ok=True, parents=True)
-    cpu_transform = instantiate(cfg.data_val.dataset.transform)
-    gpu_transform = instantiate(cfg.data_val.gpu_transform)
+        orig_img = Image.open(image_path).convert("RGB")
 
-    for i, image_path in enumerate(tqdm.tqdm(image_paths, desc="Predicting on images")):
-        image_name = image_path.stem
-        orig_img = np.array(Image.open(image_path).convert("RGB"))
-        height, width = orig_img.shape[:2]
-        img = cpu_transform({"image": orig_img})["image"].unsqueeze(0)
-        img = tops.to_cuda(img)
-        img = gpu_transform({"image": img})["image"]
-        boxes, categories, scores = model(img,score_threshold=score_threshold)[0]
-        print(scores)
-        boxes[:, [0, 2]] *= width
-        boxes[:, [1, 3]] *= height
-        boxes, categories, scores = [_.cpu().numpy() for _ in [boxes, categories, scores]]
+        img = test_cpu_transform(orig_img).unsqueeze_(0)
+        img = to_cuda(img)
+
+        detection = model(img)[0]    
+        
+        boxes = detection['boxes']
+        scores = detection['scores']
+        labels = detection['labels']
+
+        indices_t = nms(detection['boxes'], detection['scores'], 0.4)
+        indices = indices_t.detach().cpu().numpy()
+
+        boxes = boxes.detach().cpu().numpy()
+        labels = labels.detach().cpu().numpy()
+        scores = scores.detach().cpu().numpy()
+
+        boxes = np.take(boxes, indices, axis=0)
+        labels = np.take(labels, indices, axis=0)
+        scores = np.take(scores, indices, axis=0)
+
         drawn_image = draw_boxes(
-            orig_img, boxes, categories, scores).astype(np.uint8)
+            orig_img, boxes, labels, scores, width=10, alpha=2,
+        ).astype(np.uint8)
+        
         im = Image.fromarray(drawn_image)
-        output_path = output_dir.joinpath(f"{image_name}.png")
-        im.save(output_path)
+        # im.save(f"demo/{iid}.png")
+        im.save(f"demo/demo.png")
 
-if __name__ == '__main__':
-    run_demo()
+
+if __name__ == "__main__":
+    demo()

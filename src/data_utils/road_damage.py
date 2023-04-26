@@ -98,6 +98,8 @@ class RoadDamageDataset(torch.utils.data.Dataset):
         is_difficult = []
         for obj in objects:
             class_name = obj.find('name').text.strip()
+            if (class_name != 'D10' and class_name != 'D20' and class_name != 'D00' and class_name != 'D40'):
+                continue
             bbox = obj.find('bndbox')
             x1 = float(bbox.find('xmin').text) - 1
             y1 = float(bbox.find('ymin').text) - 1
@@ -109,8 +111,7 @@ class RoadDamageDataset(torch.utils.data.Dataset):
             is_difficult.append(int(is_difficult_str) if is_difficult_str else 0)
 
         return boxes, labels, is_difficult, im_info
-
-
+    
     def _read_image(self, image_id):
         image_file = os.path.join(self.data_dir, "images", "%s.jpg" % image_id)
         # image = Image.open(image_file).convert("RGB")
@@ -122,7 +123,6 @@ class RoadDamageDataset(torch.utils.data.Dataset):
 
         image = np.array(image_resized)
         return image
-    
 
     def get_annotations_as_coco(self) -> COCO:
         """
@@ -188,13 +188,13 @@ class RoadDamageTestDataset(torch.utils.data.Dataset):
         if self.transform:
             image_resized = self.transform(image_resized)
        
-        return image_resized
+        return image_resized, image_id
 
     def __len__(self):
         return len(self.image_ids)
 
-    def batch_collate(self, batch):
-        return batch
+    def batch_collate_test(self, batch):
+        return tuple(zip(*batch))
 
     def read_image_ids(self, image_sets_file):
         ids = []
@@ -202,6 +202,8 @@ class RoadDamageTestDataset(torch.utils.data.Dataset):
         for x in f:
             iid = x.rsplit('.', 1)[0]
             ids.append(iid)
+
+        ids.sort()
         return ids
 
     def _read_image(self, image_id):

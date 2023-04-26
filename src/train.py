@@ -18,9 +18,9 @@ from data_utils.utils.generate_train_val import generate_train_val
 from config.resnet import Dataset, num_classes, epochs, batch_size
 from utils.torch_utils import to_cuda, get_device
 from utils.evaluate import evaluate
-from config.resnet import train_set_dir, train_set_dir_czech, train_set_dir_us, train_set_dir_japan
+from config.resnet import train_set_dir, train_set_dir_czech, train_set_dir_us, train_set_dir_japan, train_set_dir_india, train_set_dir_china_drone, train_set_dir_china_mbike
 from utils import get_checkpoint
-from modelling import ResNet, MobileNet
+from modelling import ResNet
 
 def train_epoch(
         model, 
@@ -34,6 +34,7 @@ def train_epoch(
 
     for data in tqdm.tqdm(dataloader, f"Epoch {epoch+1}"):
         optimizer.zero_grad()
+        # print(data)
         images, targets = data
         
         images = list(image.to(get_device()) for image in images)
@@ -45,14 +46,6 @@ def train_epoch(
         losses.backward()
         optimizer.step()
 
-        # with torch.set_grad_enabled(True):
-            # output = model(images, targets)
-            
-            # loss = sum(loss for loss in output.values())
-            # total_train_loss.append(loss.item())
-            # loss.backward()
-            # optimizer.step()
-    
     train_loss = sum(total_train_loss) / len(dataloader)
     print(f"\ttrain_loss: {train_loss} | total_train_loss: {sum(total_train_loss)}")# | test_loss: {test_loss}")
 
@@ -78,11 +71,6 @@ def validate(
 
     m_ap = metric.compute()
     pprint(m_ap)
-    # print(f"- mAP:      {m_ap['map']}")
-    # print(f"- mAP 0.5:  {m_ap['map_50']}")
-    # print(f"- mAP 0.75: {m_ap['map_75']}")
-    # print(f"- mAP per class: {m_ap['map_per_class']}")
-    # print(f"  - Class 1: {m_ap['map']}\n")
 
     return m_ap
 
@@ -92,23 +80,29 @@ def train():
     generate_train_val(train_set_dir=train_set_dir_czech, country= "Czech")
     generate_train_val(train_set_dir=train_set_dir_us, country= "United_States")
     generate_train_val(train_set_dir=train_set_dir_japan, country= "Japan")
-
+    generate_train_val(train_set_dir=train_set_dir_india, country= "India")
+    generate_train_val(train_set_dir=train_set_dir_china_mbike, country= "China_Mbike")
+    generate_train_val(train_set_dir=train_set_dir_china_drone, country= "China_Drone")
+    
     dataset = Dataset()
     dataloader_train = dataset.dataloader_train
     dataloader_val = dataset.dataloader_val
 
-    model_name = 'resnet_ite2'
+    model_name = 'resnet_it3'
     losses = []
     start_epoch = 0
 
     model_obj = ResNet()
 
     # if (os.path.isfile(f"checkpoints/{model_name}.json")):
-    #     losses, start_epoch = get_checkpoint(model_name=model_name)
-    #     checkpoint = torch.load("checkpoints/" + model_name + ".pt")
-    #     model_obj.model = torch.load("checkpoints/" + model_name + ".pt")
-    #     # model_obj.model.load_state_dict(checkpoint['model_state'])
-    #     print(f"Loaded {model_name}.pt from checkpoints!")
+        # losses, start_epoch = get_checkpoint(model_name=model_name)
+        # # checkpoint = torch.load("checkpoints/" + model_name + ".pt")
+        # # model_obj.model = torch.load("checkpoints/" + model_name + ".pt")
+        # checkpoint = torch.load("checkpoints/" + model_name + ".pt", map_location=get_device())
+        # print(f"Checkpoint loaded!")
+
+        # model_obj.model.load_state_dict(checkpoint['model_state'])
+        # print(f"Loaded {model_name}.pt from checkpoints!")
     
     model = model_obj.model  
     
@@ -118,8 +112,8 @@ def train():
     scheduler = lr_scheduler.LinearLR(
         model_obj.optimizer, 
         start_factor=1.0, 
-        end_factor=0.004, 
-        total_iters=60
+        end_factor=0.01, 
+        total_iters=40
     )
     # scheduler = lr_scheduler.ExponentialLR(model_obj.optimizer, gamma=0.99)
 
@@ -143,17 +137,17 @@ def train():
         total_time += end_epoch_time
         print(f"Learning rate: {model_obj.optimizer.param_groups[0]['lr']}")
         
-        if epoch % 5 == 0:
+        if epoch % 10 == 0 and epoch != 0 or epoch == (start_epoch + epochs):
             validate(
                 model=model,
                 dataloader=dataloader_val
             )
 
-        if epoch % 10 == 0:
+        if epoch % 5 == 0:
             torch.save({
                 "model_state": model.state_dict(),
                 'optimizer_state': model_obj.optimizer.state_dict(),
-            }, "checkpoints/" + model_name + "epoch" + ".pt")
+            }, f"checkpoints/{model_name}_{epoch}.pt")
 
     end_time = timer()
     print(f"[INFO] Total training time: {end_time-start_time:.3f} seconds")
@@ -163,7 +157,7 @@ def train():
         write.writerow(losses)
 
     details = {
-        'current_epoch': epochs,
+        'current_epoch': start_epoch + epochs,
         'model_name': model_name
     }
 

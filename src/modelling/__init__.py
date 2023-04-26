@@ -1,3 +1,2 @@
-from .resnet import ResNet
-from .mobilenet import MobileNet
+from .resnet import ResNet, ResNet18
 from .anchor_boxes import AnchorBoxes

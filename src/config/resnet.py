@@ -4,32 +4,38 @@ from torch.optim.lr_scheduler import MultiStepLR, LinearLR
 from torchvision.models.detection import FasterRCNN_ResNet50_FPN_V2_Weights
 from torchvision import transforms
 
+import albumentations as A
+from albumentations.pytorch import ToTensorV2 
 from data_utils import RoadDamageDataset, RoadDamageTestDataset
 from data_utils.transforms import (ToTensor, Normalize, Resize, RandomHorizontalFlip)#, GroundTruthBoxesToAnchors)
 from .utils import get_dataset_dir, get_output_dir
 from modelling import AnchorBoxes
 
 country = "Norway"
-base_dir = "/Users/kristian/Documents/Trondheim/4. semester/TDT4265/TDT4265_project/data/road_damage"
-# base_dir = "/cluster/projects/itea_lille-idi-tdt4265/datasets/rdd2022/RDD2022"
+# base_dir = "/Users/kristian/Documents/Trondheim/4. semester/TDT4265/TDT4265_project/data/road_damage"
+base_dir = "/cluster/projects/itea_lille-idi-tdt4265/datasets/rdd2022/RDD2022"
 
 train_set_dir = f"{base_dir}/Norway/train"
 train_set_dir_czech = f"{base_dir}/Czech/train"
 train_set_dir_india = f"{base_dir}/India/train"
 train_set_dir_japan = f"{base_dir}/Japan/train"
 train_set_dir_us = f"{base_dir}/United_States/train"
+train_set_dir_china_drone = f"{base_dir}/China_Drone/train"
+train_set_dir_china_mbike = f"{base_dir}/China_MotorBike/train"
 
 test_set_dir = f"{base_dir}/Norway/test"
 
 imshape = (640,640),
-image_channels = 3,
-batch_size = 12
-epochs = 60
-train_val_split = 0.20
+image_channels = 3
+batch_size = 8
+test_batch_size = 1
+epochs = 80
+train_val_split = 0.10
 num_classes = 4 + 1
 
 train_cpu_transform = torchvision.transforms.Compose([
     transforms.ToTensor(),
+    transforms.RandomHorizontalFlip(p=0.3),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
@@ -78,15 +84,44 @@ class Dataset():
             remove_empty=True
         )
 
-        # self.dataset_japan = RoadDamageDataset(
-        #     data_dir=get_dataset_dir(train_set_dir_japan), 
-        #     split="train", 
-        #     country="Japan",
-        #     transform=train_cpu_transform, 
-        #     remove_empty=True
-        # )
+        self.dataset_japan = RoadDamageDataset(
+            data_dir=get_dataset_dir(train_set_dir_japan), 
+            split="train", 
+            country="Japan",
+            transform=train_cpu_transform, 
+            remove_empty=True
+        )
 
-        self.dataset_train = torch.utils.data.ConcatDataset(datasets=[self.dataset_norway, self.dataset_czech, self.dataset_us])
+        self.dataset_india = RoadDamageDataset(
+            data_dir=get_dataset_dir(train_set_dir_india), 
+            split="train", 
+            country="India",
+            transform=train_cpu_transform, 
+            remove_empty=True
+        )
+
+        self.dataset_china_drone = RoadDamageDataset(
+            data_dir=get_dataset_dir(train_set_dir_china_drone), 
+            split="train", 
+            country="China_Drone",
+            transform=train_cpu_transform, 
+            remove_empty=True
+        )
+
+        self.dataset_china_mbike = RoadDamageDataset(
+            data_dir=get_dataset_dir(train_set_dir_china_mbike), 
+            split="train", 
+            country="China_Mbike",
+            transform=train_cpu_transform, 
+            remove_empty=True
+        )
+
+        self.dataset_train = torch.utils.data.ConcatDataset(
+            datasets=[self.dataset_japan, self.dataset_czech, self.dataset_us, self.dataset_india, self.dataset_china_drone, self.dataset_china_mbike]
+        )
+        # self.dataset_train = torch.utils.data.ConcatDataset(
+        #     datasets=[self.dataset_japan, self.dataset_czech, self.dataset_us, self.dataset_norway]
+        # )
 
         self.dataset_val = RoadDamageDataset(
             data_dir=get_dataset_dir(train_set_dir), 
@@ -141,7 +176,7 @@ class DatasetTest():
             dataset=self.dataset, 
             num_workers=4, 
             pin_memory=True, 
-            shuffle=True, 
-            batch_size=1, 
-            collate_fn=self.dataset.batch_collate
+            shuffle=False, 
+            batch_size=test_batch_size, 
+            collate_fn=self.dataset.batch_collate_test
         )
