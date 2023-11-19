@@ -17,21 +17,17 @@ Requirements for the software and other tools to build, test and push
 
 The model is trained with
 
-    python train.py configs/ssd300.py
+    python train.py
 
 The model is tested with
 
-    python test.py configs/ssd300.py
+    python test.py
 
 A demo of the model can be run with
 
-    python demo.py configs/ssd300.py demo/mnist demo/mnist_output
+    python demo.py
 
 ## Authors
 
 - **Kristian** - _Developement_ -
   [Jegerud](https://jegerud.github.io)
-
-## Acknowledgments
-
--
